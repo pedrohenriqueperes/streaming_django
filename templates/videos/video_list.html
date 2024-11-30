@@ -46,7 +46,6 @@
             font-size: 1.1em;
             color: #2c3e50;
         }
-        /* Estilos para a paginação */
         .pagination {
             display: flex;
             justify-content: center;
@@ -89,7 +88,7 @@
         <div class="video-item">
             <a href="{% url 'videos:video_detail' video.file %}">
                 <video class="video-thumbnail" preload="metadata" muted>
-                    <source src="/videos_folder/{{ video.file }}" type="video/mp4">
+                    <source src="{% url 'videos:stream_video' video.file %}" type="video/mp4">
                 </video>
                 <h3 class="video-title">{{ video.name }}</h3>
             </a>
@@ -128,16 +127,37 @@
     {% endif %}
 
     <script>
-        // Adiciona interatividade às miniaturas
+        const options = {
+            root: null,
+            rootMargin: '50px',
+            threshold: 0.1
+        };
+
+        const loadThumbnail = (video) => {
+            if (!video.dataset.loaded) {
+                video.currentTime = 1;
+                video.dataset.loaded = true;
+            }
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    loadThumbnail(entry.target);
+                }
+            });
+        }, options);
+
         document.querySelectorAll('.video-thumbnail').forEach(video => {
-            // Mostra um frame do vídeo quando o mouse passar por cima
+            observer.observe(video);
+            
             video.addEventListener('mouseover', function() {
-                video.currentTime = 1; // Pula o primeiro frame (geralmente preto)
+                loadThumbnail(this);
             });
 
-            // Para o vídeo quando o mouse sair
             video.addEventListener('mouseout', function() {
-                video.currentTime = 0;
+                if (!this.paused) this.pause();
+                this.currentTime = 0;
             });
         });
     </script>
